@@ -3,11 +3,12 @@ const isDev = require('electron-is-dev');
 const AppWindow = require('./AppWindow.js');
 const menuItems = require('./menu.config.js');
 const path = require('path');
+const fs = require("fs");
 
 app.on('ready', () => {
   const mainWindowConfig = {
-    width: 1440,
-    height: 768,
+    width: 1200,
+    height: 1000,
   };
   const urlLocation = isDev
     ? 'http://localhost:3000'
@@ -16,6 +17,7 @@ app.on('ready', () => {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+  mainWindow.setTitle('Post Window')
   // require('@electron/remote/main').initialize();
   // require('@electron/remote/main').enable(mainWindow.webContents);
 
@@ -26,27 +28,39 @@ app.on('ready', () => {
   // const divUrlLocation = "xxxxx"
   // const divWindow = new AppWindow(divWindowConfig, divUrlLocation);
   // require('@electron/remote/main').enable(divWindow.webContents);
-  // const menu = Menu.buildFromTemplate(menuItems);
-  // Menu.setApplicationMenu(menu);
-  ipcMain.on('open-login-window', () => {
-    const loginWindowConfig = {
-      width: 500,
-      height: 400,
-      parent: mainWindow,
-    };
-    const loginFileLocation = isDev
-      ? 'http://localhost:3000/#/login'
-      : `file://${path.join(__dirname, './index.html#login')}`;
-    loginWindow = new AppWindow(loginWindowConfig, loginFileLocation);
-    ipcMain.on('close-login-window', () => {
-      loginWindow.close();
-    });
-    loginWindow.on('closed', () => {
-      loginWindow = null;
-    });
-    require('@electron/remote/main').enable(loginWindow.webContents);
+   // const menu = Menu.buildFromTemplate(menuItems);
+   // Menu.setApplicationMenu(menu);
+  
+  ipcMain.handle('file-write', async (event, content, filePath, fileName) => {
+	  
+	  fs.exists("./database/"+filePath, function(exists) {
+			if(!exists){
+				fs.mkdir("./database/"+filePath, function(err){
+				   if (err) {
+				       return console.error(err);
+				   }
+				   fs.writeFile("./database/"+filePath+fileName, content,  function(err) {
+				      if (err) {
+				          return console.error(err);
+				      }
+				   });
+				});
+			} else {
+				fs.writeFile("./database/"+filePath+fileName, content,  function(err) {
+				   if (err) {
+				       return console.error(err);
+				   }
+				});
+			}
+	  });
+	  
+  });
+  ipcMain.handle('file-read', async (event, filePath, fileName) => {
+  	  const data =  fs.readFileSync("./database/"+filePath+fileName);
+	  return  data.toString();
   });
   mainWindow.on('close', () => {
     app.quit();
   });
 });
+

@@ -6,13 +6,13 @@ class AppWindow extends BrowserWindow {
       width: 800,
       height: 600,
       webPreferences: {
-        contextIsolation: false,
-        nodeIntegration: true,
-        enableRemoteModule: true,
-        nodeIntegrationInWorker: true,
+        contextIsolation: false, //上下文隔离
+        nodeIntegration: true, 
+        enableRemoteModule: true, //远程模块
+        nodeIntegrationInWorker: true, //Web Workers使用nodejs
       },
       show: false,
-      backgroundColor: '#efefef',
+      backgroundColor: '#ffffff',
     };
     const finalConfig = { ...basicConfig, ...config };
     super(finalConfig);
