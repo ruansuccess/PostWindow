@@ -1,10 +1,7 @@
 <template>
 	<el-container class="container">
-		<el-header style="padding: 0;">
+		<el-header style="padding: 0;height: 7vh;">
 			<el-menu
-			    background-color="#545c64"
-			    text-color="#fff"
-			    active-text-color="#fff"
 			    :default-active="activeIndex"
 			    class="el-menu-demo"
 			    mode="horizontal"
@@ -29,6 +26,8 @@
 				        @open="handleOpen"
 				        @close="handleClose"
 				      >
+					 
+					   <el-menu-item index="1" @click="interfaceSelect('','')">新建请求</el-menu-item>
 				        <el-sub-menu :index="index" v-for="(group, index) in projectData.nowProjectInterface">
 				          <template #title>
 				            <span>{{group.name}}</span>
@@ -39,102 +38,123 @@
 				        
 				      </el-menu>
 			</el-aside>
-			<el-container>
-				<el-main>
-					<el-form :model="form" label-position="top">
-						<el-form-item label="接口名称">
-							<el-input v-model="form.name" placeholder="可为空"></el-input>
-						</el-form-item>	
-						<el-form-item label="请求地址">
-							<el-col :span="5">
-								<el-select v-model="form.requestType" placeholder="请选择请求类型">
-									<el-option label="GET" value="GET"></el-option>
-							  <el-option label="POST" value="POST"></el-option>
-									<el-option label="PUT" value="PUT"></el-option>
-									<el-option label="DELETE" value="DELETE"></el-option>
-									<el-option label="OPTIONS" value="OPTIONS"></el-option>
-									<el-option label="PATCH" value="PATCH"></el-option>
-									<el-option label="TRACE" value="TRACE"></el-option>
-								</el-select>
+			<el-scrollbar style="height: 93vh;width: 100%;">
+				<el-container >
+					<el-main>
+						<el-form :model="form" label-position="top">
+							<el-row :gutter="20" type="flex" justify="space-around" align="middle">
+							<el-col :span="18">
+								<el-form-item label="接口名称">
+									<el-input v-model="form.name" placeholder="可为空"></el-input>
+								</el-form-item>
 							</el-col>
-							<el-col :offset="1" :span="18">
-								<el-input v-model="form.path" placeholder="请输入请求接口地址 " prop="path"></el-input>
+							<el-col :span="6"  style="text-align: center;">
+								<el-dropdown  trigger="click"  @click="getInterfaceLog()">
+									<span class="el-dropdown-link" style="cursor:pointer;">
+									  请求记录
+									</span>
+									<template #dropdown>
+									  <el-dropdown-menu>
+										<el-dropdown-item v-if="projectData.nowProjectInterfaceLog.length === 0">暂无记录</el-dropdown-item>  
+										<el-dropdown-item v-for="(item, index) in projectData.nowProjectInterfaceLog" @click="selectInterfaceLog(item)">{{item.times}}</el-dropdown-item>
+									  </el-dropdown-menu>
+									</template>
+								 </el-dropdown>
 							</el-col>
-						</el-form-item>
-						<el-form-item label="设置信息">
-							<el-row :gutter="20">
-								<el-col :span="8">
-									<el-select v-model="form.contentType" placeholder="ContentType">
-										<el-option label="text/html" value="text/html"></el-option>
-										<el-option label="application/x-www-form-urlencoded"
-											value="application/x-www-form-urlencoded"></el-option>
-										<el-option label="application/json" value="application/json"></el-option>
-										<el-option label="text/json" value="text/json"></el-option>
-									</el-select>
-							 </el-col>
-								<el-col :span="8">
-									<el-select v-model="form.encod" placeholder="编码方式">
-										<el-option label="UTF-8" value="UTF-8"></el-option>
-										<el-option label="GBK" value="GBK"></el-option>
-										<el-option label="GB2312" value="GB2312"></el-option>
+							</el-row>			
+							<el-form-item label="请求地址">
+							<el-row :gutter="20" style="width: 100%;">
+								<el-col :span="4">
+									<el-select v-model="form.requestType" placeholder="请选择请求类型">
+										<el-option label="GET" value="GET"></el-option>
+								  <el-option label="POST" value="POST"></el-option>
+										<el-option label="PUT" value="PUT"></el-option>
+										<el-option label="DELETE" value="DELETE"></el-option>
+										<el-option label="OPTIONS" value="OPTIONS"></el-option>
+										<el-option label="PATCH" value="PATCH"></el-option>
+										<el-option label="TRACE" value="TRACE"></el-option>
 									</el-select>
 								</el-col>
-							</el-row>
-						</el-form-item>
-						<el-form-item label="请求头">
-							<el-row :span="24" :gutter="20" class="input-group" v-for="(item,index) in form.header" :key="index">
-								<el-col :span="6">
-							  <el-input v-model="item.key" placeholder="key"></el-input>
+								<el-col  :span="16">
+									<el-input v-model="form.path" placeholder="请输入请求接口地址 " prop="path"></el-input>
 								</el-col>
-								<el-col :span="14">
-									<el-input v-model="item.value" placeholder="value"></el-input>
-								</el-col>
-								<el-col :span="2">
-									<el-button type="danger" plain size="medium" @click="delHeader(item, index)">删除
-									</el-button>
-								</el-col>
-							</el-row>
-						</el-form-item>
-						<el-form-item>
-							<el-button type="primary" plain size="medium" @click="addHeader">添加header</el-button>
-							<el-button type="primary" plain size="medium" @click="batchAddFormVisible = true;batchAddForm.type='header'">批量添加</el-button>
-						</el-form-item>
-						<el-form-item label="请求参数">
-							<el-row class="input-group" v-for="(item,index) in form.params" :key="index">
-								<el-col :span="6">
-									<el-input v-model="item.key" placeholder="key"></el-input>
-								</el-col>
-								<el-col :offset="1" :span="14">
-									<el-input v-model="item.value" placeholder="value"></el-input>
-								</el-col>
-								<el-col :offset="1" :span="2">
-									<el-button type="danger" plain size="medium" @click="delParams(item,index)">删除
-									</el-button>
-								</el-col>
-							</el-row>
-						</el-form-item>
-						<el-form-item>
-							<el-button type="primary" plain size="medium" @click="addParams">添加请求参数</el-button>
-							<el-button type="primary" plain size="medium" @click="batchAddFormVisible = true;batchAddForm.type='param'">批量添加</el-button>
-						</el-form-item>
-						<el-form-item label="cookie">
-							<el-input type="textarea" v-model="form.cookies"></el-input>
-						</el-form-item>
-						<el-form-item>
-							<el-button type="primary" @click="sendRequest(form)">立即请求</el-button>
-							<el-button>取消</el-button>
-					 </el-form-item>
-					</el-form>
-					<el-alert v-show="request_tips.show" :title="request_tips.msg" :type="request_tips.status"
-						:closable="false" show-icon>
-					</el-alert>
-					<view class="json-data">
-						<json-viewer :value="jsonData" :expand-depth="5" :copyable="copyable" boxed sort theme="jv-light"
-							:expanded="true">
-						</json-viewer>
-					</view>
-				</el-main>
+							</el-row>		
+							</el-form-item>
+							<el-form-item label="设置信息">
+								<el-row :gutter="20">
+									<el-col :span="8">
+										<el-select v-model="form.contentType" placeholder="ContentType">
+											<el-option label="text/html" value="text/html"></el-option>
+											<el-option label="application/x-www-form-urlencoded"
+												value="application/x-www-form-urlencoded"></el-option>
+											<el-option label="application/json" value="application/json"></el-option>
+											<el-option label="text/json" value="text/json"></el-option>
+										</el-select>
+								 </el-col>
+									<el-col :span="8">
+										<el-select v-model="form.encod" placeholder="编码方式">
+											<el-option label="UTF-8" value="UTF-8"></el-option>
+											<el-option label="GBK" value="GBK"></el-option>
+											<el-option label="GB2312" value="GB2312"></el-option>
+										</el-select>
+									</el-col>
+								</el-row>
+							</el-form-item>
+							<el-form-item label="请求头" >
+								<el-row  :gutter="20" class="input-group" v-for="(item,index) in form.header" :key="index" style="width: 100%;">
+									<el-col :span="6">
+								  <el-input v-model="item.key" placeholder="key"></el-input>
+									</el-col>
+									<el-col :span="14">
+										<el-input v-model="item.value" placeholder="value"></el-input>
+									</el-col>
+									<el-col :span="2">
+										<el-button type="danger" plain size="medium" @click="delHeader(item, index)">删除
+										</el-button>
+									</el-col>
+								</el-row>
+							</el-form-item>
+							<el-form-item>
+								<el-button type="primary" plain size="medium" @click="addHeader">添加header</el-button>
+								<el-button type="primary" plain size="medium" @click="batchAddFormVisible = true;batchAddForm.type='header'">批量添加</el-button>
+							</el-form-item>
+							<el-form-item label="请求参数">
+								<el-row :gutter="20" class="input-group" v-for="(item,index) in form.params" :key="index" style="width: 100%;">
+									<el-col :span="6">
+										<el-input v-model="item.key" placeholder="key"></el-input>
+									</el-col>
+									<el-col  :span="14">
+										<el-input v-model="item.value" placeholder="value"></el-input>
+									</el-col>
+									<el-col :span="2">
+										<el-button type="danger" plain size="medium" @click="delParams(item,index)">删除
+										</el-button>
+									</el-col>
+								</el-row>
+							</el-form-item>
+							<el-form-item>
+								<el-button type="primary" plain size="medium" @click="addParams">添加请求参数</el-button>
+								<el-button type="primary" plain size="medium" @click="batchAddFormVisible = true;batchAddForm.type='param'">批量添加</el-button>
+							</el-form-item>
+							<el-form-item label="cookie">
+								<el-input type="textarea" v-model="form.cookies"></el-input>
+							</el-form-item>
+							<el-form-item>
+								<el-button type="primary" @click="sendRequest(form)">立即请求</el-button>
+								<el-button>取消</el-button>
+						 </el-form-item>
+						</el-form>
+						<el-alert v-show="request_tips.show" :title="request_tips.msg" :type="request_tips.status"
+							:closable="false" show-icon>
+						</el-alert>
+						<view class="json-data">
+							<json-viewer :value="jsonData" :expand-depth="5" :copyable="copyable" boxed sort theme="jv-light"
+								:expanded="true">
+							</json-viewer>
+						</view>
+					</el-main>
 			</el-container>
+			</el-scrollbar>
 		</el-container>
 		<el-dialog v-model="batchAddFormVisible" title="批量添加">
 		    <el-form :model="batchAddForm" label-position="top">
@@ -229,6 +249,10 @@
 					nowProject: {},
 					nowProjectInterface: {"ok3lvo5f3hh5":{name:"默认分组",key:"ok3lvo5f3hh5",info:"",list:{}}}, //项目接口初始化
 					nowProjectKey:"",
+					nowProjectInterfaceGroupKey:"",
+					nowProjectInterfaceKey:"",
+					nowProjectInterfaceLog:[],
+				
 				},
 				copyable: {
 					copyText: '复制',
@@ -323,6 +347,8 @@
 			projectSelect(key){
 				localStorage.set('nowProjectKey',key);
 				this.projectData.nowProject = this.projectData.projectList[key];
+				this.projectData.nowProjectKey = key;
+				this.getNowInterfaceList();
 			},
 			sendRequest(formName) {
 				 if (this.form.path == '') {
@@ -370,8 +396,6 @@
 				}
 			},
 			addHeader() {
-				this.getProjectList();
-				console.log(this.projectData.projectList);
 				this.form.header.push({
 					key: "",
 					value: ""
@@ -442,7 +466,7 @@
 			setNowProjectInterfaceList(nowProjectInterface){
 				ipcRenderer.invoke('file-write',nowProjectInterface,this.projectData.nowProjectKey+"/",'projectInterfaceList.json');
 			},
-			//将当前请求接口加入
+			//将当前请求接口加入记录
 			addNowInterfaceList(){
 				let defaultKey = "ok3lvo5f3hh5";
 				let interfaceKey = createInterfaceKey(this.form.requestType, this.form.path);
@@ -466,26 +490,53 @@
 					pthis.projectData.nowProjectInterface = nowProjectInterface;
 					
 				}).catch(function(error){
-						
+					//console.log('ssssss')
+					//读取失败赋予默认值
+					pthis.projectData.nowProjectInterface = {"ok3lvo5f3hh5":{name:"默认分组",key:"ok3lvo5f3hh5",info:"",list:{}}}	
 				});
 			},
 			//切换接口地址
 			interfaceSelect(groupKey, interfaceKey){
-				this.form = this.projectData.nowProjectInterface[groupKey].list[interfaceKey];
+				this.projectData.nowProjectInterfaceGroupKey = groupKey;
+				this.projectData.nowProjectInterfaceKey = interfaceKey;
+				if(groupKey == "" && interfaceKey == ""){
+					this.form =  {
+						name: "",
+						requestType: 'GET',
+						path: '',
+						contentType: 'application/json',
+						encod: 'UTF-8',
+						header: [{
+							key: "",
+							value: ""
+						}],
+						params: [{
+							key: "",
+							value: ""
+						}],
+						cookies: ''
+					}
+				}else{
+					this.form = this.projectData.nowProjectInterface[groupKey].list[interfaceKey];
+				}	
+				
+				//加载请求日志
+				this.getInterfaceLog();
 			},
-			setInterfaceLog(interfaceKey){
+			setInterfaceLog(){
 				let pthis = this;
-				ipcRenderer.invoke('file-read',this.projectData.nowProjectKey+"/",interfaceKey+'.json').then((res) => {
+				
+				ipcRenderer.invoke('file-read',this.projectData.nowProjectKey+"/"+this.projectData.nowProjectInterfaceGroupKey+"/",this.projectData.nowProjectInterfaceKey+'.json').then((res) => {
 					
 					let interfaceLogList = JSON.parse(res);
-					pthis.setInterfaceLogAct(interfaceLogList, interfaceKey);
+					pthis.setInterfaceLogAct(interfaceLogList);
 					
 				}).catch(function(error){
-					pthis.setInterfaceLogAct([], interfaceKey);	
+					pthis.setInterfaceLogAct([]);	
 				});
 				
 			},
-			setInterfaceLogAct(interfaceLogList, interfaceKey){
+			setInterfaceLogAct(interfaceLogList){
 				if(interfaceLogList.length >= this.projectData.nowProject.logNum){
 					interfaceLogList.shift();
 				}
@@ -494,8 +545,27 @@
 					resources: this.jsonData,
 					request: this.form,
 				};
+				
 				interfaceLogList.push(logList);
-				ipcRenderer.invoke('file-write',interfaceLogList,this.projectData.nowProjectKey+"/",interfaceKey+'.json');
+				this.projectData.nowProjectInterfaceLog = interfaceLogList;
+				interfaceLogList = JSON.stringify(interfaceLogList)
+				ipcRenderer.invoke('file-write',interfaceLogList,this.projectData.nowProjectKey+"/"+this.projectData.nowProjectInterfaceGroupKey+"/",this.projectData.nowProjectInterfaceKey+'.json');
+			},
+			getInterfaceLog(){
+				let pthis = this;
+				ipcRenderer.invoke('file-read',this.projectData.nowProjectKey+"/"+this.projectData.nowProjectInterfaceGroupKey+"/",this.projectData.nowProjectInterfaceKey+'.json').then((res) => {
+					
+					let nowProjectInterfaceLog = JSON.parse(res);
+					pthis.projectData.nowProjectInterfaceLog = nowProjectInterfaceLog;
+					
+				}).catch(function(error){
+					
+					pthis.projectData.nowProjectInterfaceLog = []
+				});
+			},
+			selectInterfaceLog(interfaceLog){
+				this.form = interfaceLog.request;
+				this.jsonData = interfaceLog.resources;
 			}
 		
 		}
@@ -507,6 +577,8 @@
 		/* max-width: 1200px; */
 		margin: 0 auto;
 		user-select: text;
+		/* max-height: 100vh; */
+		user-select:none;
 	}
 
 	.input-group {
@@ -516,11 +588,24 @@
 	.json-data {
 		margin-top: 20px;
 		text-align: left;
+		user-select:text;
 	}
 	.flex-grow{
 		 flex-grow: 2;
 	}
 	.top-menu-icon{
 		height:56px !important;
+	}
+	.scrollbar-demo-item {
+	 
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  height: 50px;
+	  margin: 10px;
+	  text-align: center;
+	  border-radius: 4px;
+	  background: var(--el-color-primary-light-9);
+	  color: var(--el-color-primary);
 	}
 </style>
