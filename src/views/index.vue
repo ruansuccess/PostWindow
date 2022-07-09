@@ -2,12 +2,11 @@
 	<el-container class="container">
 		<el-header style="padding: 0;height: 7vh;">
 			<el-menu
-			    :default-active="activeIndex"
 			    class="el-menu-demo"
 			    mode="horizontal"
 			    :ellipsis="false"
 			  >
-			    <el-menu-item index="0">Post Window请求助手</el-menu-item>
+			    <el-menu-item disabled style="color: black;">Post Window请求助手</el-menu-item>
 			    <div class="flex-grow" />
 			   
 			    <el-sub-menu index="1">

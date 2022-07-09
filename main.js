@@ -18,6 +18,7 @@ app.on('ready', () => {
   const mainWindowConfig = {
     width: 1200,
     height: 1000,
+	frame :true,
   };
   const urlLocation = isDev
     ? 'http://localhost:3000'
@@ -26,7 +27,6 @@ app.on('ready', () => {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
-  mainWindow.setTitle('Post Window')
   // require('@electron/remote/main').initialize();
   // require('@electron/remote/main').enable(mainWindow.webContents);
 
