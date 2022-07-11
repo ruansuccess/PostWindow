@@ -16,7 +16,7 @@ class AppWindow extends BrowserWindow {
     };
     const finalConfig = { ...basicConfig, ...config };
     super(finalConfig);
-    //this.webContents.openDevTools();
+    this.webContents.openDevTools();
     this.loadURL(urlLocation);
     this.once('ready-to-show', () => {
       this.show();

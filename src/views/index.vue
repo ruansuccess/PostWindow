@@ -6,7 +6,7 @@
 			    mode="horizontal"
 			    :ellipsis="false"
 			  >
-			    <el-menu-item disabled style="color: black;">Post Window请求助手</el-menu-item>
+			   <!-- <el-menu-item disabled style="color: black;">Post Window请求助手</el-menu-item> -->
 			    <div class="flex-grow" />
 			   
 			    <el-sub-menu index="1">
@@ -42,12 +42,12 @@
 					<el-main>
 						<el-form :model="form" label-position="top">
 							<el-row :gutter="20" type="flex" justify="space-around" align="middle">
-							<el-col :span="18">
+							<el-col :span="16">
 								<el-form-item label="接口名称">
 									<el-input v-model="form.name" placeholder="可为空"></el-input>
 								</el-form-item>
 							</el-col>
-							<el-col :span="6"  style="text-align: center;">
+							<el-col :span="4"  style="text-align: center;">
 								<el-dropdown  trigger="click"  @click="getInterfaceLog()">
 									<span class="el-dropdown-link" style="cursor:pointer;">
 									  请求记录
@@ -59,6 +59,10 @@
 									  </el-dropdown-menu>
 									</template>
 								 </el-dropdown>
+							</el-col>
+							<el-col :span="3"  style="text-align: center;">
+								<el-button type="danger"  @click="getEasyswooleDocApi()">更新
+								</el-button>
 							</el-col>
 							</el-row>			
 							<el-form-item label="请求地址">
@@ -208,6 +212,7 @@
 	import {isJson, kvToJson, createHash, createInterfaceKey, getTime} from "../common/function.js";
 	import localStorage from "../common/localStorage.js";
 	const {ipcRenderer} = window.require('electron');
+	const cheerio = require('cheerio');
 	export default {
 		data() {
 			return {
@@ -565,6 +570,23 @@
 			selectInterfaceLog(interfaceLog){
 				this.form = interfaceLog.request;
 				this.jsonData = interfaceLog.resources;
+			},
+			//爬取网页
+			getEasyswooleDocApi(){
+				this.$axios({
+					url: 'http://10.0.0.15:9501/doc',
+				}).then(res => {
+					const htmlData = res.data;
+					
+					const $ = cheerio.load(htmlData, { decodeEntities: false });
+
+					$('.group-title').each(function(i){
+						let group = $(this).nextUntil($('.group-title')[i+1]);
+						
+					});
+				}).catch(err => {
+					
+				})
 			}
 		
 		}
