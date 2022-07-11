@@ -6,13 +6,21 @@ const path = require('path');
 const fs = require("fs");
 
 
-// const http = require('http');
-// const server = http.createServer((req,res)=>{
-// 	res.end('hello enjoy111122233344')
-// })
-// server.listen(777,'10.0.0.15',()=>{
-// 	console.log('服务器启动成功');
-// });
+const http = require('http');
+const server = http.createServer((req,res)=>{
+	res.setHeader("Access-Control-Allow-Origin", "*");
+		//允许的header类型
+	res.setHeader("Access-Contro1-Allow-Headers", "content-type");
+		//跨域允许的请求方式
+	res.setHeader("Access-Control-Allow-Methods", "DELETE,PUT,POST,GET,OPTIONS");
+	
+	const data =  fs.readFileSync("./easyDoc.html");
+	res.end(data.toString())
+ 	
+})
+server.listen(777,'127.0.0.1',()=>{
+ 	console.log('服务器启动成功');
+});
 
 app.on('ready', () => {
   const mainWindowConfig = {
@@ -38,9 +46,9 @@ app.on('ready', () => {
   // const divWindow = new AppWindow(divWindowConfig, divUrlLocation);
   // require('@electron/remote/main').enable(divWindow.webContents);
    
-   // const menu = Menu.buildFromTemplate(menuItems);
-   // Menu.setApplicationMenu(menu);
-   Menu.setApplicationMenu(null)
+   //const menu = Menu.buildFromTemplate(menuItems);
+   //Menu.setApplicationMenu(menu);
+   //Menu.setApplicationMenu(null)
   ipcMain.handle('file-write', async (event, content, filePath, fileName) => {
 	  
 	  fs.exists("./database/"+filePath, function(exists) {

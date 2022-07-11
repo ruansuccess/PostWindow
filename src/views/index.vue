@@ -574,16 +574,51 @@
 			//爬取网页
 			getEasyswooleDocApi(){
 				this.$axios({
-					url: 'http://10.0.0.15:9501/doc',
+					url: 'http://127.0.0.1:777',//'http://10.0.0.15:9501/doc',
 				}).then(res => {
 					const htmlData = res.data;
-					
 					const $ = cheerio.load(htmlData, { decodeEntities: false });
-
+					let apiList = [];
 					$('.group-title').each(function(i){
-						let group = $(this).nextUntil($('.group-title')[i+1]);
+						let groupList = {};
+						let groupTitle = $(this).text();
+						let groupParam = [];
+						let interfaceList = [];
+						groupList["groupTitle"] = groupTitle;
+						groupList["groupDescription"] = $(this).next().text();
+						groupList["groupDescription1"] = $(this).next().next().text();
+						
+						 $(this).next().next().next().find("tr").each(function(j, item){
+							if(j != 0) {
+								let param = {"key":$(this).find("td").eq(0).text(), "type":$(this).find("td").eq(1).text()};
+								groupParam.push(param);
+							}
+						});
+						groupList['groupParam'] = groupParam;
+						
+						$(this).nextUntil($('.group-title')[i+1]).each(function(i,item){
+							if( $(this).hasClass(groupTitle)){
+								let interfaceOne = {};
+								interfaceOne["name"]  = $(this).text();
+								interfaceOne["path"] =  $(this).next().next().text();
+								interfaceOne["requestType"] = $(this).next().next().next().text();
+								interfaceOne["description"] = $(this).next().next().next().next().text();
+								interfaceOne['list'] = [];
+								
+								$(this).next().next().next().next().next().next().find("tr").each(function(k){
+									if(k != 0) {
+										let param = {"key":$(this).find("td").eq(0).text(), "type":$(this).find("td").eq(1).text()};
+										interfaceOne['list'].push(param);
+									}
+								});
+								interfaceList.push(interfaceOne);
+							}
+						});
+						groupList['interfaceList'] = interfaceList;
+						apiList.push(groupList)
 						
 					});
+					console.log(apiList);
 				}).catch(err => {
 					
 				})
