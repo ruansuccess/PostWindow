@@ -42,12 +42,12 @@
 					<el-main>
 						<el-form :model="form" label-position="top">
 							<el-row :gutter="20" type="flex" justify="space-around" align="middle">
-							<el-col :span="16">
+							<el-col :span="18">
 								<el-form-item label="接口名称">
 									<el-input v-model="form.name" placeholder="可为空"></el-input>
 								</el-form-item>
 							</el-col>
-							<el-col :span="4"  style="text-align: center;">
+							<el-col :span="6"  style="text-align: center;">
 								<el-dropdown  trigger="click"  @click="getInterfaceLog()">
 									<span class="el-dropdown-link" style="cursor:pointer;">
 									  请求记录
@@ -60,10 +60,7 @@
 									</template>
 								 </el-dropdown>
 							</el-col>
-							<el-col :span="3"  style="text-align: center;">
-								<el-button type="danger"  @click="getEasyswooleDocApi()">更新
-								</el-button>
-							</el-col>
+							
 							</el-row>			
 							<el-form-item label="请求地址">
 							<el-row :gutter="20" style="width: 100%;">
@@ -211,8 +208,12 @@
 <script>
 	import {isJson, kvToJson, createHash, createInterfaceKey, getTime} from "../common/function.js";
 	import localStorage from "../common/localStorage.js";
+	import md5 from 'js-md5';
 	const {ipcRenderer} = window.require('electron');
 	const cheerio = require('cheerio');
+	ipcRenderer.on('refresh-load', function(){
+		window.location.reload();
+	})
 	export default {
 		data() {
 			return {
@@ -245,7 +246,7 @@
 					baseUrl:"",
 					importUrl:"",
 					autoInterface:false,
-					logNum:20,
+					logNum:10,
 					action:"add",
 				},
 				projectData:{
@@ -344,6 +345,8 @@
 					autoInterface:false,
 				};
 				this.projectFormVisible = false;
+				this.projectSelect(key);
+				
 				this.$message.success('操作成功');
 			
 			},
@@ -352,6 +355,9 @@
 				localStorage.set('nowProjectKey',key);
 				this.projectData.nowProject = this.projectData.projectList[key];
 				this.projectData.nowProjectKey = key;
+				if(this.projectData.nowProject.importUrl){
+					this.getEasyswooleDocHtml(pthis.projectData.nowProject.importUrl);
+				}
 				this.getNowInterfaceList();
 			},
 			sendRequest(formName) {
@@ -385,9 +391,10 @@
 					this.request_tips.msg 	= '200 ' + 'ok';
 					this.request_tips.status = 'success';
 				}).catch(err => {
-					pthis.jsonData = err.response.data;
+					console.log(err);
+					this.jsonData = err.response.data;
 					this.request_tips.show = true,
-						this.request_tips.msg = err.code + ' ' + err.message;
+					this.request_tips.msg = err.code + ' ' + err.message;
 					this.request_tips.status = 'error';
 				})
 				//自动添加接口
@@ -428,6 +435,7 @@
 					baseUrl:"",
 					importUrl:"",
 					autoInterface:"",
+					logNum:10,
 					action:"add",
 				};
 			},
@@ -453,6 +461,9 @@
 							pthis.projectData.nowProject = projectList[key];
 							break;
 						}
+					}
+					if(pthis.projectData.nowProject.importUrl){
+						pthis.getEasyswooleDocHtml(pthis.projectData.nowProject.importUrl);
 					}
 					pthis.getNowInterfaceList();
 					
@@ -572,57 +583,106 @@
 				this.jsonData = interfaceLog.resources;
 			},
 			//爬取网页
-			getEasyswooleDocApi(){
+			getEasyswooleDocHtml(url){
+				const pthis = this;
 				this.$axios({
-					url: 'http://127.0.0.1:777',//'http://10.0.0.15:9501/doc',
+					url: url,
 				}).then(res => {
 					const htmlData = res.data;
-					const $ = cheerio.load(htmlData, { decodeEntities: false });
-					let apiList = [];
-					$('.group-title').each(function(i){
-						let groupList = {};
-						let groupTitle = $(this).text();
-						let groupParam = [];
-						let interfaceList = [];
-						groupList["groupTitle"] = groupTitle;
-						groupList["groupDescription"] = $(this).next().text();
-						groupList["groupDescription1"] = $(this).next().next().text();
-						
-						 $(this).next().next().next().find("tr").each(function(j, item){
-							if(j != 0) {
-								let param = {"key":$(this).find("td").eq(0).text(), "type":$(this).find("td").eq(1).text()};
-								groupParam.push(param);
-							}
-						});
-						groupList['groupParam'] = groupParam;
-						
-						$(this).nextUntil($('.group-title')[i+1]).each(function(i,item){
-							if( $(this).hasClass(groupTitle)){
-								let interfaceOne = {};
-								interfaceOne["name"]  = $(this).text();
-								interfaceOne["path"] =  $(this).next().next().text();
-								interfaceOne["requestType"] = $(this).next().next().next().text();
-								interfaceOne["description"] = $(this).next().next().next().next().text();
-								interfaceOne['list'] = [];
-								
-								$(this).next().next().next().next().next().next().find("tr").each(function(k){
-									if(k != 0) {
-										let param = {"key":$(this).find("td").eq(0).text(), "type":$(this).find("td").eq(1).text()};
-										interfaceOne['list'].push(param);
-									}
-								});
-								interfaceList.push(interfaceOne);
-							}
-						});
-						groupList['interfaceList'] = interfaceList;
-						apiList.push(groupList)
-						
-					});
-					console.log(apiList);
-				}).catch(err => {
+					const htmlHsah = md5(htmlData);
+					const nowProjectKey = pthis.projectData.nowProjectKey;
+					if(!localStorage.has('htmlHsah_'+nowProjectKey) || htmlHsah != localStorage.get("htmlHsah_"+nowProjectKey) ){
+						localStorage.set("htmlHsah_"+nowProjectKey, htmlHsah);
+						pthis.parseEasyswooleDoc(htmlData);
+					}
 					
+				}).catch(err => {
+					console.log(err);
+					this.$message.error('easyswoole文档接口请求失败');
 				})
-			}
+			},
+			parseEasyswooleDoc(htmlData){
+				const pthis = this;
+				const $ = cheerio.load(htmlData, { decodeEntities: false });
+				let apiList = [];
+				$('.group-title').each(function(i){
+					let groupList = {};
+					let groupTitle = $(this).text();
+					let groupParam = [];
+					let interfaceList = [];
+					groupList["groupTitle"] = groupTitle;
+					groupList["groupDescription"] = $(this).next().text();
+					groupList["groupDescription1"] = $(this).next().next().text();
+					
+					 $(this).next().next().next().find("tr").each(function(j, item){
+						if(j != 0) {
+							let param = {"key":$(this).find("td").eq(0).text(), "type":$(this).find("td").eq(1).text()};
+							groupParam.push(param);
+						}
+					});
+					groupList['groupParam'] = groupParam;
+					
+					$(this).nextUntil($('.group-title')[i+1]).each(function(i,item){
+						if( $(this).hasClass(groupTitle)){
+							let interfaceOne = {};
+							interfaceOne["name"]  = $(this).text();
+							interfaceOne["path"] =  $(this).next().next().text().slice(6);
+							interfaceOne["requestType"] = $(this).next().next().next().text().slice(8);
+							interfaceOne["description"] = $(this).next().next().next().next().text();
+							interfaceOne['list'] = [];
+							
+							$(this).next().next().next().next().next().next().find("tr").each(function(k){
+								if(k != 0) {
+									let param = {"key":$(this).find("td").eq(0).text(), "type":$(this).find("td").eq(1).text()};
+									interfaceOne['list'].push(param);
+								}
+							});
+							interfaceList.push(interfaceOne);
+						}
+					});
+					groupList['interfaceList'] = interfaceList;
+					apiList.push(groupList)
+					
+				});
+				
+				this.projectData.nowProjectInterface = {"ok3lvo5f3hh5" : this.projectData.nowProjectInterface["ok3lvo5f3hh5"]}
+				
+				apiList.forEach(function(item, i){
+					
+					let groupKey = md5(item.groupTitle).slice(16);
+					let list = {};
+					//公共的请求头和参数
+					let groupHeader = [];
+					let groupParam = [];
+					item.groupParam.forEach(function(param){
+						if(param.type == "HEADER"){
+							groupHeader.push({"key":param.key, "value":""});
+						}else{
+							groupParam.push({"key":param.key, "value":""});
+						}
+					})
+					console.log(item)
+					item.interfaceList.forEach(function(itemInterface, j){
+						let interfaceKey = createInterfaceKey(itemInterface.requestType.split(',')[0], itemInterface.path);
+						let interfaceHeader = groupHeader;
+						let interfaceParam = groupParam;
+						itemInterface.list.forEach(function(param){
+							if(param.type == "HEADER"){
+								interfaceHeader.push({"key":param.key, "value":""});
+							}else{
+								interfaceParam.push({"key":param.key, "value":""});
+							}
+						});
+						list[interfaceKey] = {"name":itemInterface.name,"requestType":itemInterface.requestType.split(',')[0],"path":itemInterface.path,"contentType":"application/json","encod":"UTF-8","header":interfaceHeader,"params":interfaceParam,"cookies":""};
+					});
+					
+					pthis.projectData.nowProjectInterface[groupKey] = {"name":item.groupTitle, "key":groupKey,"info":item.groupDescription,"list":list}
+				})
+				console.log('更新文件接口')
+				let nowProjectInterface = JSON.stringify(pthis.projectData.nowProjectInterface)
+				pthis.setNowProjectInterfaceList(nowProjectInterface);
+			},
+			
 		
 		}
 	}

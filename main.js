@@ -1,4 +1,4 @@
-const { app, Menu, ipcMain } = require('electron');
+const { app, Menu, ipcMain, globalShortcut } = require('electron');
 const isDev = require('electron-is-dev');
 const AppWindow = require('./AppWindow.js');
 const menuItems = require('./menu.config.js');
@@ -6,21 +6,21 @@ const path = require('path');
 const fs = require("fs");
 
 
-const http = require('http');
-const server = http.createServer((req,res)=>{
-	res.setHeader("Access-Control-Allow-Origin", "*");
-		//允许的header类型
-	res.setHeader("Access-Contro1-Allow-Headers", "content-type");
-		//跨域允许的请求方式
-	res.setHeader("Access-Control-Allow-Methods", "DELETE,PUT,POST,GET,OPTIONS");
+// const http = require('http');
+// const server = http.createServer((req,res)=>{
+// 	res.setHeader("Access-Control-Allow-Origin", "*");
+// 		//允许的header类型
+// 	res.setHeader("Access-Contro1-Allow-Headers", "content-type");
+// 		//跨域允许的请求方式
+// 	res.setHeader("Access-Control-Allow-Methods", "DELETE,PUT,POST,GET,OPTIONS");
 	
-	const data =  fs.readFileSync("./easyDoc.html");
-	res.end(data.toString())
+// 	const data =  fs.readFileSync("./easyDoc.html");
+// 	res.end(data.toString())
  	
-})
-server.listen(777,'127.0.0.1',()=>{
- 	console.log('服务器启动成功');
-});
+// })
+// server.listen(777,'127.0.0.1',()=>{
+//  	console.log('服务器启动成功');
+// });
 
 app.on('ready', () => {
   const mainWindowConfig = {
@@ -35,6 +35,10 @@ app.on('ready', () => {
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
+  globalShortcut.register('CommandOrControl+R', () => {
+      console.log('CommandOrControl+R is pressed')
+	  mainWindow.webContents.send('refresh-load');
+   })
   // require('@electron/remote/main').initialize();
   // require('@electron/remote/main').enable(mainWindow.webContents);
 
@@ -48,7 +52,7 @@ app.on('ready', () => {
    
    //const menu = Menu.buildFromTemplate(menuItems);
    //Menu.setApplicationMenu(menu);
-   //Menu.setApplicationMenu(null)
+   Menu.setApplicationMenu(null)
   ipcMain.handle('file-write', async (event, content, filePath, fileName) => {
 	  
 	  fs.exists("./database/"+filePath, function(exists) {
