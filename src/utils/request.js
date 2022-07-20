@@ -6,7 +6,6 @@ import config from './../config';
 
 // 创建axios实例对象，添加全局配置
 const service = axios.create({
-  baseURL: config.baseApi,
   timeout: 5000,
 });
 

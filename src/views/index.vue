@@ -207,6 +207,7 @@
 
 <script>
 	import {isJson, kvToJson, createHash, createInterfaceKey, getTime} from "../common/function.js";
+	import qs from 'qs';
 	import localStorage from "../common/localStorage.js";
 	import md5 from 'js-md5';
 	const {ipcRenderer} = window.require('electron');
@@ -356,7 +357,7 @@
 				this.projectData.nowProject = this.projectData.projectList[key];
 				this.projectData.nowProjectKey = key;
 				if(this.projectData.nowProject.importUrl){
-					this.getEasyswooleDocHtml(pthis.projectData.nowProject.importUrl);
+					this.getEasyswooleDocHtml(this.projectData.nowProject.importUrl);
 				}
 				this.getNowInterfaceList();
 			},
@@ -379,6 +380,8 @@
 				 })
 				let pthis = this;
 				let url = this.projectData.nowProject.baseUrl+this.form.path;
+				//header["Content-Type"] = this.form.contentType;
+				params = qs.stringify(params);
 				this.$axios({
 					url: url,
 					method: pthis.form.requestType,
@@ -589,10 +592,10 @@
 					url: url,
 				}).then(res => {
 					const htmlData = res.data;
-					const htmlHsah = md5(htmlData);
+					const htmlHash = md5(htmlData);
 					const nowProjectKey = pthis.projectData.nowProjectKey;
-					if(!localStorage.has('htmlHsah_'+nowProjectKey) || htmlHsah != localStorage.get("htmlHsah_"+nowProjectKey) ){
-						localStorage.set("htmlHsah_"+nowProjectKey, htmlHsah);
+					if(!localStorage.has('htmlHash_'+nowProjectKey) || htmlHash != localStorage.get("htmlHash_"+nowProjectKey) ){
+						localStorage.set("htmlHash_"+nowProjectKey, htmlHash);
 						pthis.parseEasyswooleDoc(htmlData);
 					}
 					
@@ -652,20 +655,26 @@
 					let groupKey = md5(item.groupTitle).slice(16);
 					let list = {};
 					//公共的请求头和参数
-					let groupHeader = [];
-					let groupParam = [];
+					const  publicHeader = [];
+
 					item.groupParam.forEach(function(param){
 						if(param.type == "HEADER"){
-							groupHeader.push({"key":param.key, "value":""});
-						}else{
-							groupParam.push({"key":param.key, "value":""});
+							publicHeader.push({"key":param.key, "value":""});
 						}
 					})
+					
 					console.log(item)
+					
 					item.interfaceList.forEach(function(itemInterface, j){
 						let interfaceKey = createInterfaceKey(itemInterface.requestType.split(',')[0], itemInterface.path);
-						let interfaceHeader = groupHeader;
-						let interfaceParam = groupParam;
+						let interfaceHeader = [];
+						let interfaceParam = [];
+						    interfaceHeader = publicHeader;
+						item.groupParam.forEach(function(param){
+							if(param.type != "HEADER"){
+								interfaceParam.push({"key":param.key, "value":""});
+							}
+						})	 
 						itemInterface.list.forEach(function(param){
 							if(param.type == "HEADER"){
 								interfaceHeader.push({"key":param.key, "value":""});
